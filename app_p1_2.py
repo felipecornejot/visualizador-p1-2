@@ -77,7 +77,7 @@ produccion_anual = st.sidebar.slider(
     'Producción Anual (ton):',
     min_value=100,
     max_value=5000,
-    value=1000,
+    value=2500, # Aumentado el valor por defecto
     step=100,
     help="Volumen total de ciruelas procesadas anualmente."
 )
@@ -86,7 +86,7 @@ porcentaje_reduccion_sorbato = st.sidebar.slider(
     'Reducción Sorbato (%):',
     min_value=20.0,
     max_value=60.0,
-    value=40.0,
+    value=50.0, # Aumentado el valor por defecto
     step=1.0,
     help="Porcentaje de reducción en el uso de sorbato de potasio."
 )
@@ -186,7 +186,9 @@ ax1.yaxis.set_tick_params(colors=colors_for_charts[0])
 ax1.spines['top'].set_visible(False)
 ax1.spines['right'].set_visible(False)
 ax1.tick_params(axis='x', length=0)
-ax1.set_ylim(bottom=0)
+# Ajuste dinámico del ylim
+max_sorbato_val = max(sorbato_values)
+ax1.set_ylim(bottom=0, top=max_sorbato_val * 1.15) # 15% de margen superior
 for bar in bars1:
     yval = bar.get_height()
     ax1.text(bar.get_x() + bar.get_width()/2, yval + 0.05 * yval, round(yval, 2), ha='center', va='bottom', color=colors_for_charts[0])
@@ -202,7 +204,9 @@ ax2.yaxis.set_tick_params(colors=colors_for_charts[0])
 ax2.spines['top'].set_visible(False)
 ax2.spines['right'].set_visible(False)
 ax2.tick_params(axis='x', length=0)
-ax2.set_ylim(bottom=0)
+# Ajuste dinámico del ylim
+max_pda_val = max(pda_values)
+ax2.set_ylim(bottom=0, top=max_pda_val * 1.15) # 15% de margen superior
 for bar in bars2:
     yval = bar.get_height()
     ax2.text(bar.get_x() + bar.get_width()/2, yval + 0.05 * yval, round(yval, 2), ha='center', va='bottom', color=colors_for_charts[0])
@@ -218,10 +222,11 @@ ax3.yaxis.set_tick_params(colors=colors_for_charts[0])
 ax3.spines['top'].set_visible(False)
 ax3.spines['right'].set_visible(False)
 ax3.tick_params(axis='x', length=0)
-ax3.set_ylim(bottom=0)
+# Ajuste dinámico del ylim
+max_perdidas_val = max(perdidas_eco_values)
+ax3.set_ylim(bottom=0, top=max_perdidas_val * 1.15) # 15% de margen superior
 for bar in bars3:
     yval = bar.get_height()
-    # CAMBIO AQUÍ: Usar f"{yval:,.0f}" para redondear a entero y formatear con comas
     ax3.text(bar.get_x() + bar.get_width()/2, yval + 0.05 * yval, f"${yval:,.0f}", ha='center', va='bottom', color=colors_for_charts[0])
 
 plt.tight_layout(rect=[0, 0.05, 1, 0.95])
@@ -255,7 +260,8 @@ ax_sorbato.yaxis.set_tick_params(colors=colors_for_charts[0])
 ax_sorbato.spines['top'].set_visible(False)
 ax_sorbato.spines['right'].set_visible(False)
 ax_sorbato.tick_params(axis='x', length=0)
-ax_sorbato.set_ylim(bottom=0)
+# Ajuste dinámico del ylim para la descarga
+ax_sorbato.set_ylim(bottom=0, top=max_sorbato_val * 1.15)
 for bar in ax_sorbato.patches:
     yval = bar.get_height()
     ax_sorbato.text(bar.get_x() + bar.get_width()/2, yval + 0.05 * yval, round(yval, 2), ha='center', va='bottom', color=colors_for_charts[0])
@@ -274,7 +280,8 @@ ax_pda.yaxis.set_tick_params(colors=colors_for_charts[0])
 ax_pda.spines['top'].set_visible(False)
 ax_pda.spines['right'].set_visible(False)
 ax_pda.tick_params(axis='x', length=0)
-ax_pda.set_ylim(bottom=0)
+# Ajuste dinámico del ylim para la descarga
+ax_pda.set_ylim(bottom=0, top=max_pda_val * 1.15)
 for bar in ax_pda.patches:
     yval = bar.get_height()
     ax_pda.text(bar.get_x() + bar.get_width()/2, yval + 0.05 * yval, round(yval, 2), ha='center', va='bottom', color=colors_for_charts[0])
@@ -293,10 +300,10 @@ ax_perdidas_eco.yaxis.set_tick_params(colors=colors_for_charts[0])
 ax_perdidas_eco.spines['top'].set_visible(False)
 ax_perdidas_eco.spines['right'].set_visible(False)
 ax_perdidas_eco.tick_params(axis='x', length=0)
-ax_perdidas_eco.set_ylim(bottom=0)
+# Ajuste dinámico del ylim para la descarga
+ax_perdidas_eco.set_ylim(bottom=0, top=max_perdidas_val * 1.15)
 for bar in ax_perdidas_eco.patches:
     yval = bar.get_height()
-    # CAMBIO AQUÍ: Usar f"${yval:,.0f}" para redondear a entero y formatear con comas
     ax_perdidas_eco.text(bar.get_x() + bar.get_width()/2, yval + 0.05 * yval, f"${yval:,.0f}", ha='center', va='bottom', color=colors_for_charts[0])
 plt.tight_layout()
 download_button(fig_perdidas_eco, "Perdidas_Economicas_Evitadas_PDA", "download_perdidas_eco")
