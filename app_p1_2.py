@@ -32,36 +32,42 @@ st.markdown("""
 
 # --- 1. Datos del Proyecto (Línea Base y Proyecciones) ---
 # Datos extraídos de la ficha técnica P1.2-2.docx
+# NOTA: Los valores "valor_base_ficha_ejemplo" se usan principalmente como referencia para una línea base en los gráficos.
+# Para este proyecto P1.2, donde el beneficio es una "reducción" o "evitación", la línea base para la "reducción"
+# o "evitación" misma es 0, y el valor proyectado es el impacto.
 data_p12 = {
     "indicador": [
         "Reducción en el uso de sorbato de potasio (kg/año)",
-        "GEI evitados por transporte de devoluciones (tCO₂e/año)", # Mantenemos este indicador, asumiendo que se relaciona con PDA evitado
+        "GEI evitados por transporte de devoluciones (tCO₂e/año)",
         "Ahorro en costos por sorbato de potasio (USD/año)",
         "Pérdida y desperdicio de alimentos (PDA) evitado (ton/año)",
         "Pérdidas económicas asociadas a la PDA evitada (USD/año)"
     ],
     "unidad": ["kg/año", "tCO₂e/año", "USD/año", "ton/año", "USD/año"],
+    # Para la reducción de sorbato, el "valor_base_ficha_ejemplo" es el que se obtenía con el método tradicional
+    # o un valor de referencia, aquí lo ajustamos para que la "Línea Base" del gráfico de *reducción* sea 0.
     "valor_base_ficha_ejemplo": [
-        1600, # Para 1000 ton de producción y reducción de 1.6 g/kg (asumido de ficha anterior similar, P1.2 no da un num base)
-        0,    # Asumimos 0 GEI evitados base, el impacto es con la implementación
-        8000, # Para 1000 ton de producción y reducción del 40% (1.6 kg/ton * $5/kg) (asumido de ficha anterior similar, P1.2 no da un num base)
-        0,    # Asumimos 0 PDA evitado en línea base (el beneficio es la proyección)
-        0     # Asumimos 0 pérdidas económicas evitadas en línea base (el beneficio es la proyección)
+        0,    # La reducción base sin la tecnología es 0. El beneficio es la proyección.
+        0,    # GEI evitados base es 0, el impacto es con la implementación
+        0,    # Ahorro base es 0, el impacto es con la implementación
+        0,    # PDA evitado base es 0, el beneficio es la proyección
+        0     # Pérdidas económicas evitadas base es 0, el beneficio es la proyección
     ],
     "produccion_anual_ejemplo_ton": [
-        1000, # para sorbato
-        None, # GEI no tiene producción anual base directa en ficha P1.2
-        1000, # para ahorro sorbato
-        None, # PDA ejemplo no especifica volumen de exportacion
-        None  # PDA económica ejemplo no especifica volumen de exportacion
+        1000, # Esto puede ser una referencia para cálculos internos si fuera necesario un factor de la ficha.
+        None,
+        1000,
+        None,
+        None
     ],
     "dosis_sorbato_conv_g_kg": [4, None, None, None, None], # 4 g/kg de ficha P1.2
     "dosis_sorbato_opt_g_kg": [2.4, None, None, None, None], # 2.4 g/kg de ficha P1.2 (asumiendo 40% de reducción)
     "precio_sorbato_usd_kg": [None, None, 5, None, None], # Precio estimado para sorbato
-    # Los siguientes valores se mantienen como referencia para GEI por transporte, basados en la lógica de P1.1 si no hay datos en P1.2
-    "distancia_transporte_km": [12000, None, None, None, None], # Ejemplo genérico de distancia de exportación
-    "factor_emision_co2e_ton_km": [0.01, None, None, None, None], # Factor genérico
-    "precio_ciruela_exportacion_usd_ton": [None, None, None, None, 3200], # Precio de ciruela de P1.2
+    # Factores para GEI y precio de ciruela que NO estaban en las filas correctas o eran None
+    # Los asignamos directamente aquí para evitar None en los cálculos.
+    "distancia_transporte_km": [12000, 12000, None, None, None], # Asignamos a la fila 1 y 0 para consistencia
+    "factor_emision_co2e_ton_km": [0.01, 0.01, None, None, None], # Asignamos a la fila 1 y 0 para consistencia
+    "precio_ciruela_exportacion_usd_ton": [None, None, None, None, 3200], # Precio de ciruela de P1.2, en la fila de pérdidas económicas
 }
 
 df_diagnostico_p12 = pd.DataFrame(data_p12)
@@ -82,18 +88,16 @@ porcentaje_reduccion_sorbato = st.sidebar.slider(
     'Reducción Sorbato (%):',
     min_value=20.0,
     max_value=60.0,
-    value=50.0, # Valor por defecto para un impacto inicial mayor
+    value=40.0, # Ajustado a 40% como el valor de la ficha para "dosis_sorbato_opt_g_kg"
     step=1.0,
     help="Porcentaje de reducción en el uso de sorbato de potasio aplicado."
 )
 
-# Se interpreta este slider como el % de la producción anual que se logra evitar como PDA
-# debido a la mejora en la calidad del producto por la tecnología (disminución de rechazos por aditivos).
 porcentaje_devoluciones_evitadas = st.sidebar.slider(
     'Reducción de PDA (Pérdida y Desperdicio de Alimentos) (% de producción anual):',
     min_value=0.0,
-    max_value=5.0, # Un porcentaje más realista para "evitado" sobre el total de la producción
-    value=1.0, # Un valor por defecto que muestre un impacto
+    max_value=5.0,
+    value=1.0,
     step=0.1,
     help="Porcentaje de la producción anual de ciruelas que se evita como PDA (desperdicio o devoluciones) gracias a la tecnología."
 )
@@ -111,22 +115,25 @@ precio_ciruela = st.sidebar.slider(
 
 # Reducción sorbato (kg/año)
 dosis_conv_g_kg = df_diagnostico_p12.loc[0, 'dosis_sorbato_conv_g_kg']
-dosis_optim_g_kg = dosis_conv_g_kg * (1 - porcentaje_reduccion_sorbato / 100)
-reduccion_sorbato_kg_año = (dosis_conv_g_kg - dosis_optim_g_kg) * produccion_anual / 1000 # Convertir g/kg a kg/ton
+# Recalculamos la dosis óptima basada en el slider, no en el valor fijo del dataframe
+dosis_optim_g_kg_calculada = dosis_conv_g_kg * (1 - porcentaje_reduccion_sorbato / 100)
+reduccion_sorbato_kg_año = (dosis_conv_g_kg - dosis_optim_g_kg_calculada) * produccion_anual / 1000 # Convertir g/kg a kg/ton
 
 # Ahorro en costos por sorbato (USD/año)
-precio_sorbato = df_diagnostico_p12.loc[2, 'precio_sorbato_usd_kg']
+precio_sorbato = df_diagnostico_p12.loc[2, 'precio_sorbato_usd_kg'] # Aseguramos que la fila 2 tenga el precio
 ahorro_costos_sorbato_usd_año = reduccion_sorbato_kg_año * precio_sorbato
 
-# PDA evitado (ton/año) - CÁLCULO MANTENIDO DE LA VERSIÓN ANTERIOR (metodología P1.1 adaptada)
+# PDA evitado (ton/año)
 pda_evitada_ton_año = (porcentaje_devoluciones_evitadas / 100) * produccion_anual
 
-# GEI evitados por transporte (tCO₂e/año) - CÁLCULO MANTENIDO DE LA VERSIÓN ANTERIOR (metodología P1.1 adaptada)
+# GEI evitados por transporte (tCO₂e/año)
+# Usamos los valores asignados directamente en el diccionario data_p12 para evitar None
 distancia_transporte_km = df_diagnostico_p12.loc[1, 'distancia_transporte_km']
 factor_emision_co2e_ton_km = df_diagnostico_p12.loc[1, 'factor_emision_co2e_ton_km']
-gei_evitados_tco2e_año = pda_evitada_ton_año * (distancia_transporte_km * factor_emision_co2e_ton_km / 1000)
+gei_evitados_tco2e_año = pda_evitada_ton_año * (distancia_transporte_km * factor_emision_co2e_ton_km) # No dividir por 1000 si el factor ya está en tCO2e/ton-km
 
-# Pérdidas económicas asociadas a PDA evitada (USD/año) - CÁLCULO MANTENIDO DE LA VERSIÓN ANTERIOR (metodología P1.1 adaptada)
+# Pérdidas económicas asociadas a PDA evitada (USD/año)
+# Usamos el precio_ciruela del slider, no del dataframe para este cálculo directo
 perdidas_economicas_pda_evitada_usd_año = pda_evitada_ton_año * precio_ciruela
 
 st.header('Resultados Proyectados Anuales:')
@@ -158,11 +165,10 @@ st.header('📊 Análisis Gráfico de Impactos')
 
 # --- Visualización (Gráficos 2D con Matplotlib) ---
 # Cálculo de valores de línea base para los gráficos (desde los datos de la ficha P1.2)
-reduccion_sorbato_base_ejemplo = df_diagnostico_p12.loc[0, 'valor_base_ficha_ejemplo']
-# Establecemos 0 como línea base para PDA evitado y Pérdidas Económicas Evitadas,
-# ya que representan el beneficio 'adicional' de la tecnología.
-pda_evitada_base_ejemplo = 0
-perdidas_economicas_pda_base_ejemplo = 0
+# Establecemos 0 como línea base para la "reducción" o "evitación" misma.
+reduccion_sorbato_base_ejemplo = 0 # No hay reducción base sin la tecnología
+pda_evitada_base_ejemplo = 0 # No hay PDA evitado base sin la tecnología
+perdidas_economicas_pda_base_ejemplo = 0 # No hay pérdidas económicas evitadas base sin la tecnología
 
 # Creamos una figura con 3 subplots (2D)
 fig, (ax1, ax2, ax3) = plt.subplots(1, 3, figsize=(20, 7), facecolor=color_primario_3_rgb)
@@ -186,7 +192,7 @@ ax1.spines['right'].set_visible(False)
 ax1.tick_params(axis='x', length=0)
 # Ajuste dinámico del ylim
 max_sorbato_val = max(sorbato_values)
-ax1.set_ylim(bottom=0, top=max_sorbato_val * 1.15) # 15% de margen superior
+ax1.set_ylim(bottom=0, top=max(max_sorbato_val * 1.15, 1)) # Asegura al menos 1kg si es muy bajo
 for bar in bars1:
     yval = bar.get_height()
     ax1.text(bar.get_x() + bar.get_width()/2, yval + 0.05 * yval, round(yval, 2), ha='center', va='bottom', color=colors_for_charts[0])
@@ -204,7 +210,6 @@ ax2.spines['right'].set_visible(False)
 ax2.tick_params(axis='x', length=0)
 # Ajuste dinámico del ylim
 max_pda_val = max(pda_values)
-# Asegura que el ylim sea al menos un valor mínimo para que el gráfico no se vea vacío si la proyección es 0
 ax2.set_ylim(bottom=0, top=max(max_pda_val * 1.15, 1)) # 15% de margen superior o mínimo 1 ton
 for bar in bars2:
     yval = bar.get_height()
@@ -223,7 +228,6 @@ ax3.spines['right'].set_visible(False)
 ax3.tick_params(axis='x', length=0)
 # Ajuste dinámico del ylim
 max_perdidas_val = max(perdidas_eco_values)
-# Asegura que el ylim sea al menos un valor mínimo para que el gráfico no se vea vacío si la proyección es 0
 ax3.set_ylim(bottom=0, top=max(max_perdidas_val * 1.15, 1000)) # 15% de margen superior o mínimo 1000 USD
 for bar in bars3:
     yval = bar.get_height()
@@ -260,7 +264,7 @@ ax_sorbato.yaxis.set_tick_params(colors=colors_for_charts[0])
 ax_sorbato.spines['top'].set_visible(False)
 ax_sorbato.spines['right'].set_visible(False)
 ax_sorbato.tick_params(axis='x', length=0)
-ax_sorbato.set_ylim(bottom=0, top=max_sorbato_val * 1.15)
+ax_sorbato.set_ylim(bottom=0, top=max(max_sorbato_val * 1.15, 1))
 for bar in ax_sorbato.patches:
     yval = bar.get_height()
     ax_sorbato.text(bar.get_x() + bar.get_width()/2, yval + 0.05 * yval, round(yval, 2), ha='center', va='bottom', color=colors_for_charts[0])
@@ -344,5 +348,5 @@ with col_logos_center:
 st.markdown("<div style='text-align: center; font-size: small; color: gray;'>Viña del Mar, Valparaíso, Chile</div>", unsafe_allow_html=True)
 
 st.sidebar.markdown("---")
-st.sidebar.markdown(f"<div style='text-align: center; font-size: smaller; color: gray;'>Versión del Visualizador: 1.7</div>", unsafe_allow_html=True) # Actualizada la versión
+st.sidebar.markdown(f"<div style='text-align: center; font-size: smaller; color: gray;'>Versión del Visualizador: 1.8</div>", unsafe_allow_html=True) # Actualizada la versión
 st.sidebar.markdown(f"<div style='text-align: center; font-size: x-small; color: lightgray;'>Desarrollado con Streamlit</div>", unsafe_allow_html=True)
