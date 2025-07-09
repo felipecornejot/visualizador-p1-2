@@ -8,14 +8,14 @@ import requests
 
 # --- Paleta de Colores ---
 # Definición de colores en formato RGB (0-1) para Matplotlib
-color_primario_1_rgb = (14/255, 69/255, 74/255)   # 0E454A (Oscuro)
-color_primario_2_rgb = (31/255, 255/255, 95/255)  # 1FFF5F (Verde vibrante)
+color_primario_1_rgb = (14/255, 69/255, 74/255) # 0E454A (Oscuro)
+color_primario_2_rgb = (31/255, 255/255, 95/255) # 1FFF5F (Verde vibrante)
 color_primario_3_rgb = (255/255, 255/255, 255/255) # FFFFFF (Blanco)
 
 # Colores del logo de Sustrend para complementar
-color_sustrend_1_rgb = (0/255, 155/255, 211/255)   # 009BD3 (Azul claro)
-color_sustrend_2_rgb = (0/255, 140/255, 207/255)   # 008CCF (Azul medio)
-color_sustrend_3_rgb = (0/255, 54/255, 110/255)    # 00366E (Azul oscuro)
+color_sustrend_1_rgb = (0/255, 155/255, 211/255) # 009BD3 (Azul claro)
+color_sustrend_2_rgb = (0/255, 140/255, 207/255) # 008CCF (Azul medio)
+color_sustrend_3_rgb = (0/255, 54/255, 110/255) # 00366E (Azul oscuro)
 
 # Selección de colores para los gráficos
 # Usaré una combinación de los colores primarios y Sustrend para contraste
@@ -221,7 +221,8 @@ ax3.tick_params(axis='x', length=0)
 ax3.set_ylim(bottom=0)
 for bar in bars3:
     yval = bar.get_height()
-    ax3.text(bar.get_x() + bar.get_width()/2, yval + 0.05 * yval, f"${int(yval):,}", ha='center', va='bottom', color=colors_for_charts[0])
+    # CAMBIO AQUÍ: Usar f"{yval:,.0f}" para redondear a entero y formatear con comas
+    ax3.text(bar.get_x() + bar.get_width()/2, yval + 0.05 * yval, f"${yval:,.0f}", ha='center', va='bottom', color=colors_for_charts[0])
 
 plt.tight_layout(rect=[0, 0.05, 1, 0.95])
 st.pyplot(fig)
@@ -295,7 +296,8 @@ ax_perdidas_eco.tick_params(axis='x', length=0)
 ax_perdidas_eco.set_ylim(bottom=0)
 for bar in ax_perdidas_eco.patches:
     yval = bar.get_height()
-    ax_perdidas_eco.text(bar.get_x() + bar.get_width()/2, yval + 0.05 * yval, f"${int(yval):,}", ha='center', va='bottom', color=colors_for_charts[0])
+    # CAMBIO AQUÍ: Usar f"${yval:,.0f}" para redondear a entero y formatear con comas
+    ax_perdidas_eco.text(bar.get_x() + bar.get_width()/2, yval + 0.05 * yval, f"${yval:,.0f}", ha='center', va='bottom', color=colors_for_charts[0])
 plt.tight_layout()
 download_button(fig_perdidas_eco, "Perdidas_Economicas_Evitadas_PDA", "download_perdidas_eco")
 plt.close(fig_perdidas_eco)
